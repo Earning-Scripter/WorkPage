@@ -6,29 +6,71 @@
     <title>Login Page</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+        h2, h3 {
+            text-align: center;
+            color: #333;
+        }
+        input[type="text"], input[type="password"], input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
         }
         .hidden {
             display: none;
         }
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            border: 1px solid #ccc;
-            padding: 20px;
-            border-radius: 10px;
-        }
-        input[type="text"], input[type="password"], input[type="number"] {
-            width: 100%;
+        .info-box {
+            background-color: #f9f9f9;
             padding: 10px;
+            border-radius: 5px;
             margin: 10px 0;
-            box-sizing: border-box;
+            border: 1px solid #ddd;
         }
-        button {
-            padding: 10px 20px;
-            margin: 10px 0;
-            cursor: pointer;
+        .center-text {
+            text-align: center;
+        }
+        .timer {
+            color: red;
+            font-weight: bold;
+        }
+        .history-box {
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+        }
+        #withdrawPage input {
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -48,38 +90,59 @@
         <h3>Balance: ₹<span id="balance">0</span></h3>
         <button onclick="showWithdraw()">Withdraw</button>
 
-        <h3>Work Page</h3>
-        <p>All Platforms Link: 
-            <select id="platformStatus">
-                <option value="working">Working</option>
-                <option value="not working">Not Working</option>
-            </select>
-        </p>
-        <p>Number of platforms: 
-            <select id="platformCondition" onchange="togglePlatformInput()">
-                <option value="all working">All Working</option>
-                <option value="some not">Some Not Working</option>
-            </select>
-        </p>
-        <div id="platformNamesInput" class="hidden">
-            <input type="text" id="platformNames" placeholder="Enter the platform names that are not working">
+        <div class="info-box">
+            <h3>Work Page</h3>
+            <p>All Platforms Link: 
+                <select id="platformStatus">
+                    <option value="working">Working</option>
+                    <option value="not working">Not Working</option>
+                </select>
+            </p>
+            <p>Number of platforms: 
+                <select id="platformCondition" onchange="togglePlatformInput()">
+                    <option value="all working">All Working</option>
+                    <option value="some not">Some Not Working</option>
+                </select>
+            </p>
+            <div id="platformNamesInput" class="hidden">
+                <input type="text" id="platformNames" placeholder="Enter platform names that are not working">
+            </div>
+            <button onclick="submitWork()">Submit</button>
+            <p id="successMessage" style="color: green;"></p>
+            <p id="remainingTime" class="timer"></p>
         </div>
-        <button onclick="submitWork()">Submit</button>
 
-        <p id="successMessage" style="color: green;"></p>
-        <h3>History:</h3>
-        <div id="history"></div>
-        <button id="claimBtn" onclick="claimBonus()">Claim ₹50</button>
+        <div class="history-box">
+            <h3>History</h3>
+            <div id="history"></div>
+            <button id="claimBtn" onclick="claimBonus()">Claim ₹50</button>
+        </div>
 
         <div id="withdrawPage" class="hidden">
             <h3>Withdrawal</h3>
-            <input type="text" id="bankName" placeholder="Bank Name">
-            <input type="text" id="bankIFSC" placeholder="Bank IFSC">
-            <input type="text" id="accountNumber" placeholder="Account Number">
-            <input type="text" id="holderName" placeholder="Holder Name">
+            <p>Payment Method: 
+                <select id="paymentMethod" onchange="togglePaymentMethod()">
+                    <option value="bank">Bank</option>
+                    <option value="usdt">USDT (TRC20)</option>
+                </select>
+            </p>
+
+            <!-- Bank withdrawal inputs -->
+            <div id="bankInputs">
+                <input type="text" id="bankName" placeholder="Bank Name">
+                <input type="text" id="bankIFSC" placeholder="Bank IFSC">
+                <input type="text" id="accountNumber" placeholder="Account Number">
+                <input type="text" id="holderName" placeholder="Holder Name">
+            </div>
+
+            <!-- USDT withdrawal inputs -->
+            <div id="usdtInputs" class="hidden">
+                <input type="text" id="usdtAddress" placeholder="USDT Wallet Address (TRC20)">
+            </div>
+
             <input type="number" id="withdrawAmount" placeholder="Amount">
             <button onclick="withdraw()">Withdraw</button>
-            <div id="withdrawError" style="color: red;"></div>
+            <p id="withdrawError" style="color: red;"></p>
 
             <h3>Withdrawal History</h3>
             <div id="withdrawHistory"></div>
@@ -93,6 +156,7 @@
     let balance = localStorage.getItem('balance') ? parseFloat(localStorage.getItem('balance')) : 0;
     let history = JSON.parse(localStorage.getItem('history')) || [];
     let claimClicked = localStorage.getItem('claimClicked') || false;
+    let lastSubmission = localStorage.getItem('lastSubmission') || null;
 
     document.getElementById('balance').innerText = balance;
 
@@ -106,6 +170,7 @@
             if (claimClicked) {
                 document.getElementById('claimBtn').disabled = true;
             }
+            checkTimeTillMidnight();
         } else {
             document.getElementById('loginError').innerText = 'Incorrect ID or Password';
         }
@@ -131,8 +196,10 @@
         const entry = `Date: ${dateTime}, Platforms: ${status}, Condition: ${condition}, Not Working: ${platformNames}`;
         history.push(entry);
         localStorage.setItem('history', JSON.stringify(history));
+        localStorage.setItem('lastSubmission', new Date().toString());
         loadHistory();
         document.getElementById('successMessage').innerText = 'Submitted successfully!';
+        checkTimeTillMidnight();
     }
 
     function loadHistory() {
@@ -158,35 +225,114 @@
         document.getElementById('withdrawPage').classList.remove('hidden');
     }
 
+    function togglePaymentMethod() {
+        const paymentMethod = document.getElementById('paymentMethod').value;
+        if (paymentMethod === 'bank') {
+            document.getElementById('bankInputs').classList.remove('hidden');
+            document.getElementById('usdtInputs').classList.add('hidden');
+        } else {
+            document.getElementById('bankInputs').classList.add('hidden');
+            document.getElementById('usdtInputs').classList.remove('hidden');
+        }
+    }
+
     function withdraw() {
         const amount = parseFloat(document.getElementById('withdrawAmount').value);
         if (amount >= 200 && amount <= balance) {
             balance -= amount;
             document.getElementById('balance').innerText = balance;
-            localStorage.setItem('balance', balance);
+                       localStorage.setItem('balance', balance);
+
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            let withdrawalDetails = '';
             const dateTime = new Date().toLocaleString();
-            const withdrawEntry = `Date: ${dateTime}, Amount: ₹${amount}, Bank: ${document.getElementById('bankName').value}, IFSC: ${document.getElementById('bankIFSC').value}, Account: ${document.getElementById('accountNumber').value}, Holder: ${document.getElementById('holderName').value}`;
-            history.push(withdrawEntry);
-            localStorage.setItem('history', JSON.stringify(history));
-            loadHistory();
+
+            if (paymentMethod === 'bank') {
+                const bankName = document.getElementById('bankName').value;
+                const bankIFSC = document.getElementById('bankIFSC').value;
+                const accountNumber = document.getElementById('accountNumber').value;
+                const holderName = document.getElementById('holderName').value;
+                
+                withdrawalDetails = `Date: ${dateTime}, Amount: ₹${amount}, Method: Bank, Bank Name: ${bankName}, IFSC: ${bankIFSC}, Account No: ${accountNumber}, Holder Name: ${holderName}`;
+            } else if (paymentMethod === 'usdt') {
+                const usdtAddress = document.getElementById('usdtAddress').value;
+                
+                withdrawalDetails = `Date: ${dateTime}, Amount: ₹${amount}, Method: USDT (TRC20), Wallet Address: ${usdtAddress}`;
+            }
+
+            // Save withdrawal details to local storage
+            let withdrawHistory = JSON.parse(localStorage.getItem('withdrawHistory')) || [];
+            withdrawHistory.push(withdrawalDetails);
+            localStorage.setItem('withdrawHistory', JSON.stringify(withdrawHistory));
+
+            // Display withdrawal history
+            loadWithdrawHistory();
+
             document.getElementById('withdrawError').innerText = '';
         } else {
-            document.getElementById('withdrawError').innerText = 'Minimum withdrawal is ₹200 or insufficient balance.';
+            document.getElementById('withdrawError').innerText = 'Invalid amount. Minimum withdrawal is ₹200 or balance is insufficient.';
+        }
+    }
+
+    function loadWithdrawHistory() {
+        const withdrawHistory = JSON.parse(localStorage.getItem('withdrawHistory')) || [];
+        let historyHTML = '';
+        withdrawHistory.forEach(item => {
+            historyHTML += `<p>${item}</p>`;
+        });
+        document.getElementById('withdrawHistory').innerHTML = historyHTML;
+    }
+
+    // Timer to check until midnight and reset the form
+    function checkTimeTillMidnight() {
+        const now = new Date();
+        const midnight = new Date(now);
+        midnight.setHours(24, 0, 0, 0);
+
+        const timeDiff = midnight - now;
+        const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+        if (timeDiff > 0) {
+            document.getElementById('remainingTime').innerText = `Remaining time until 12:00 AM: ${hours}h ${minutes}m ${seconds}s`;
+            setTimeout(checkTimeTillMidnight, 1000); // Update every second
+        } else {
+            resetDailyTasks();
         }
     }
 
     function resetDailyTasks() {
-        const lastReset = localStorage.getItem('lastReset');
-        const currentDate = new Date().toDateString();
-        if (lastReset !== currentDate) {
-            localStorage.setItem('lastReset', currentDate);
-            claimClicked = false;
-            localStorage.setItem('claimClicked', false);
-            document.getElementById('claimBtn').disabled = false;
+        // Reset the submission and claim button
+        localStorage.removeItem('lastSubmission');
+        claimClicked = false;
+        localStorage.setItem('claimClicked', false);
+        document.getElementById('claimBtn').disabled = false;
+        document.getElementById('successMessage').innerText = '';
+        document.getElementById('remainingTime').innerText = '';
+
+        // Reload the work form
+        document.getElementById('platformStatus').value = 'working';
+        document.getElementById('platformCondition').value = 'all working';
+        document.getElementById('platformNamesInput').classList.add('hidden');
+        loadHistory();
+    }
+    
+
+    function resetDailyWorkCheck() {
+        const lastSubmission = new Date(localStorage.getItem('lastSubmission'));
+        const today = new Date();
+        if (!lastSubmission || today.getDate() !== lastSubmission.getDate()) {
+            resetDailyTasks();
+        } else {
+            checkTimeTillMidnight();
         }
     }
 
-    resetDailyTasks();
+    // Initialize page
+    resetDailyWorkCheck();
+        loadWithdrawHistory();
+
 </script>
 
 </body>
