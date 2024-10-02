@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .hidden {
+            display: none;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        input[type="text"], input[type="password"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="login">
+        <h2>Login</h2>
+        <input type="text" id="loginID" placeholder="Enter ID">
+        <input type="password" id="loginPass" placeholder="Enter Password">
+        <button onclick="login()">Login</button>
+        <p id="loginError" style="color: red;"></p>
+    </div>
+
+    <div id="dashboard" class="hidden">
+        <h3>Telegram ID: @ItsSquare</h3>
+        <h3>Balance: ₹<span id="balance">0</span></h3>
+        <button onclick="showWithdraw()">Withdraw</button>
+
+        <h3>Work Page</h3>
+        <p>All Platforms Link: 
+            <select id="platformStatus">
+                <option value="working">Working</option>
+                <option value="not working">Not Working</option>
+            </select>
+        </p>
+        <p>Number of platforms: 
+            <select id="platformCondition" onchange="togglePlatformInput()">
+                <option value="all working">All Working</option>
+                <option value="some not">Some Not Working</option>
+            </select>
+        </p>
+        <div id="platformNamesInput" class="hidden">
+            <input type="text" id="platformNames" placeholder="Enter the platform names that are not working">
+        </div>
+        <button onclick="submitWork()">Submit</button>
+
+        <p id="successMessage" style="color: green;"></p>
+        <h3>History:</h3>
+        <div id="history"></div>
+        <button id="claimBtn" onclick="claimBonus()">Claim ₹50</button>
+
+        <div id="withdrawPage" class="hidden">
+            <h3>Withdrawal</h3>
+            <input type="text" id="bankName" placeholder="Bank Name">
+            <input type="text" id="bankIFSC" placeholder="Bank IFSC">
+            <input type="text" id="accountNumber" placeholder="Account Number">
+            <input type="text" id="holderName" placeholder="Holder Name">
+            <input type="number" id="withdrawAmount" placeholder="Amount">
+            <button onclick="withdraw()">Withdraw</button>
+            <div id="withdrawError" style="color: red;"></div>
+
+            <h3>Withdrawal History</h3>
+            <div id="withdrawHistory"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const loginID = '@ItsSquare';
+    const loginPass = '123456';
+    let balance = localStorage.getItem('balance') ? parseFloat(localStorage.getItem('balance')) : 0;
+    let history = JSON.parse(localStorage.getItem('history')) || [];
+    let claimClicked = localStorage.getItem('claimClicked') || false;
+
+    document.getElementById('balance').innerText = balance;
+
+    function login() {
+        const enteredID = document.getElementById('loginID').value;
+        const enteredPass = document.getElementById('loginPass').value;
+        if (enteredID === loginID && enteredPass === loginPass) {
+            document.getElementById('login').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            loadHistory();
+            if (claimClicked) {
+                document.getElementById('claimBtn').disabled = true;
+            }
+        } else {
+            document.getElementById('loginError').innerText = 'Incorrect ID or Password';
+        }
+    }
+
+    function togglePlatformInput() {
+        const condition = document.getElementById('platformCondition').value;
+        if (condition === 'some not') {
+            document.getElementById('platformNamesInput').classList.remove('hidden');
+        } else {
+            document.getElementById('platformNamesInput').classList.add('hidden');
+        }
+    }
+
+    function submitWork() {
+        const status = document.getElementById('platformStatus').value;
+        const condition = document.getElementById('platformCondition').value;
+        let platformNames = '';
+        if (condition === 'some not') {
+            platformNames = document.getElementById('platformNames').value;
+        }
+        const dateTime = new Date().toLocaleString();
+        const entry = `Date: ${dateTime}, Platforms: ${status}, Condition: ${condition}, Not Working: ${platformNames}`;
+        history.push(entry);
+        localStorage.setItem('history', JSON.stringify(history));
+        loadHistory();
+        document.getElementById('successMessage').innerText = 'Submitted successfully!';
+    }
+
+    function loadHistory() {
+        let historyHTML = '';
+        history.forEach(item => {
+            historyHTML += `<p>${item}</p>`;
+        });
+        document.getElementById('history').innerHTML = historyHTML;
+    }
+
+    function claimBonus() {
+        if (!claimClicked) {
+            balance += 50;
+            document.getElementById('balance').innerText = balance;
+            localStorage.setItem('balance', balance);
+            claimClicked = true;
+            localStorage.setItem('claimClicked', true);
+            document.getElementById('claimBtn').disabled = true;
+        }
+    }
+
+    function showWithdraw() {
+        document.getElementById('withdrawPage').classList.remove('hidden');
+    }
+
+    function withdraw() {
+        const amount = parseFloat(document.getElementById('withdrawAmount').value);
+        if (amount >= 200 && amount <= balance) {
+            balance -= amount;
+            document.getElementById('balance').innerText = balance;
+            localStorage.setItem('balance', balance);
+            const dateTime = new Date().toLocaleString();
+            const withdrawEntry = `Date: ${dateTime}, Amount: ₹${amount}, Bank: ${document.getElementById('bankName').value}, IFSC: ${document.getElementById('bankIFSC').value}, Account: ${document.getElementById('accountNumber').value}, Holder: ${document.getElementById('holderName').value}`;
+            history.push(withdrawEntry);
+            localStorage.setItem('history', JSON.stringify(history));
+            loadHistory();
+            document.getElementById('withdrawError').innerText = '';
+        } else {
+            document.getElementById('withdrawError').innerText = 'Minimum withdrawal is ₹200 or insufficient balance.';
+        }
+    }
+
+    function resetDailyTasks() {
+        const lastReset = localStorage.getItem('lastReset');
+        const currentDate = new Date().toDateString();
+        if (lastReset !== currentDate) {
+            localStorage.setItem('lastReset', currentDate);
+            claimClicked = false;
+            localStorage.setItem('claimClicked', false);
+            document.getElementById('claimBtn').disabled = false;
+        }
+    }
+
+    resetDailyTasks();
+</script>
+
+</body>
+</html>
